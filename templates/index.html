@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SysWatch — Cybersecurity Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070a0f;
+    --bg2: #0b0f18;
+    --bg3: #101520;
+    --bg4: #161d2a;
+    --border: #1a2235;
+    --border2: #223050;
+    --text: #c8d8f0;
+    --text2: #6a80a8;
+    --text3: #384860;
+    --accent: #00d4ff;
+    --accent2: #0af0c8;
+    --green: #00e676;
+    --yellow: #ffd740;
+    --red: #ff4757;
+    --purple: #b060ff;
+    --orange: #ff9100;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout { display: flex; height: 100vh; position: relative; z-index: 1; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 230px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #00d4ff22, #00d4ff44);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  }
+
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-shadow: 0 0 12px rgba(0,212,255,0.4);
+    text-transform: uppercase;
+  }
+
+  .logo-sub { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
+
+  nav { padding: 14px 10px; flex: 1; }
+
+  .nav-section {
+    font-size: 9px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 10px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+
+  .nav-item.active {
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    border-color: rgba(0,212,255,0.2);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+
+  .new-badge {
+    margin-left: auto;
+    font-size: 9px;
+    background: rgba(0,230,118,0.2);
+    color: var(--green);
+    border: 1px solid rgba(0,230,118,0.3);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .sidebar-status {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* ── Main ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .topbar-title { font-size: 17px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .topbar-sub { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,212,255,0.3); }
+
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  .btn-danger { background: rgba(255,71,87,0.12); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+  .btn-danger:hover { background: rgba(255,71,87,0.22); }
+
+  .btn-success { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .btn-success:hover { background: rgba(0,230,118,0.22); }
+
+  .btn-cyan { background: rgba(0,212,255,0.12); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .btn-cyan:hover { background: rgba(0,212,255,0.22); }
+
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  .content { flex: 1; overflow-y: auto; padding: 22px; }
+  .content::-webkit-scrollbar { width: 5px; }
+  .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.2s ease; }
+
+  /* ── Stats Grid ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--border2); }
+
+  .stat-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+  .stat-value { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+  .stat-sub { font-size: 10px; color: var(--text3); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+
+  .stat-card.cyan .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.yellow .stat-value { color: var(--yellow); }
+  .stat-card.purple .stat-value { color: var(--purple); }
+
+  .progress-bar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+  .cyan .progress-fill { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .green .progress-fill { background: linear-gradient(90deg, var(--green), #69f0ae); }
+  .yellow .progress-fill { background: linear-gradient(90deg, var(--yellow), #ffe57f); }
+  .purple .progress-fill { background: linear-gradient(90deg, var(--purple), #d090ff); }
+
+  /* ── Panel ── */
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .panel-header { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 13px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+  .panel-body { padding: 16px; }
+
+  /* ── Two col ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+
+  .info-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .info-icon { width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .info-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.8px; }
+  .info-value { font-size: 14px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── Terminal ── */
+  .log-terminal { background: #04070d; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; height: 420px; display: flex; flex-direction: column; }
+
+  .terminal-header { background: var(--bg3); padding: 9px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .terminal-dots { display: flex; gap: 5px; }
+  .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .terminal-dot.red { background: #ff5f57; }
+  .terminal-dot.yellow { background: #febc2e; }
+  .terminal-dot.green { background: #28c840; }
+  .terminal-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); letter-spacing: 1px; }
+
+  .terminal-body { flex: 1; overflow-y: auto; padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.9; }
+  .terminal-body::-webkit-scrollbar { width: 4px; }
+  .terminal-body::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .log-line { display: flex; gap: 10px; align-items: flex-start; }
+  .log-time { color: var(--text3); flex-shrink: 0; }
+  .log-service { color: var(--accent); flex-shrink: 0; min-width: 70px; }
+  .log-msg { flex: 1; }
+
+  .log-line.INFO .log-msg { color: #7a9ac0; }
+  .log-line.WARN .log-msg { color: var(--yellow); }
+  .log-line.ERROR .log-msg { color: var(--red); }
+
+  .log-badge { font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 700; flex-shrink: 0; }
+  .INFO .log-badge { background: rgba(0,212,255,0.15); color: var(--accent); }
+  .WARN .log-badge { background: rgba(255,215,64,0.15); color: var(--yellow); }
+  .ERROR .log-badge { background: rgba(255,71,87,0.15); color: var(--red); }
+
+  /* ── Table ── */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { text-align: left; font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; padding: 0 0 10px 0; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+  .data-table td { padding: 9px 0; font-size: 12px; border-bottom: 1px solid rgba(26,34,53,0.6); font-family: 'JetBrains Mono', monospace; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(0,212,255,0.03); }
+
+  .pid-badge { background: var(--bg4); color: var(--text3); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+
+  .status-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; }
+  .status-running { background: rgba(0,230,118,0.12); color: var(--green); }
+  .status-stopped { background: rgba(255,71,87,0.12); color: var(--red); }
+  .status-sleeping { background: rgba(255,215,64,0.1); color: var(--yellow); }
+
+  /* ── Port chips ── */
+  .port-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .port-chip { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .port-chip:hover { border-color: var(--accent); background: rgba(0,212,255,0.06); }
+  .port-num { color: var(--accent); font-weight: 700; font-size: 15px; }
+  .port-name { color: var(--text3); font-size: 10px; margin-top: 2px; }
+
+  /* ── Form ── */
+  .add-form { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; }
+  .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; transition: border-color 0.15s; outline: none; }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.08); }
+  .form-input::placeholder { color: var(--text3); }
+
+  /* ── Services ── */
+  .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .service-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: all 0.2s; }
+  .service-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .service-card.stopped { opacity: 0.55; border-style: dashed; }
+  .service-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .service-name { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+  .service-desc { color: var(--text2); font-size: 12px; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; }
+  .service-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
+  .service-actions { display: flex; gap: 6px; margin-top: 12px; }
+
+  /* ── CMD ── */
+  .cmd-area { background: #04070d; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .cmd-input-row { display: flex; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
+  .cmd-prompt { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+  .cmd-input { flex: 1; background: transparent; border: none; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; }
+  .cmd-output { padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6a9ab0; line-height: 1.7; min-height: 120px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+  .cmd-output.error { color: var(--red); }
+
+  /* ── Section ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .section-sub { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .table-scroll { max-height: 320px; overflow-y: auto; }
+  .table-scroll::-webkit-scrollbar { width: 4px; }
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  /* ── IP Checker ── */
+  .ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-bottom: 20px; }
+
+  .ip-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+
+  .ip-card:hover { border-color: var(--border2); }
+  .ip-card.online { border-color: rgba(0,230,118,0.3); }
+  .ip-card.offline { border-color: rgba(255,71,87,0.3); }
+
+  .ip-card-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ip-label { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+  .ip-addr { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .ip-alive {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .ip-alive.online { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  .ip-alive.offline { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .ip-alive.unknown { background: var(--text3); }
+
+  .ip-card-body { padding: 14px 16px; }
+
+  .ip-stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
+  .ip-stat-label { color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+  .ip-stat-value { color: var(--text); font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  .port-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+  .port-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+
+  .port-tag.open { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+  .port-tag.closed { background: rgba(56,72,96,0.3); color: var(--text3); border-color: var(--border); }
+
+  .ip-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+  .ip-geo { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .http-badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+  }
+
+  .http-ok { background: rgba(0,230,118,0.12); color: var(--green); }
+  .http-fail { background: rgba(255,71,87,0.12); color: var(--red); }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 22px; right: 22px; background: var(--bg3); border: 1px solid var(--border2); padding: 11px 18px; border-radius: 8px; font-size: 13px; display: none; z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,0.5); animation: slideUp 0.2s ease; font-family: 'JetBrains Mono', monospace; }
+  .toast.show { display: block; }
+  .toast.success { border-color: rgba(0,230,118,0.4); color: var(--green); }
+  .toast.error { border-color: rgba(255,71,87,0.4); color: var(--red); }
+  .toast.info { border-color: rgba(0,212,255,0.4); color: var(--accent); }
+
+  @media (max-width: 1100px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🛡️</div>
+      <div>
+        <div class="logo-text">SysWatch</div>
+        <div class="logo-sub">v1.0.0 // CYBER</div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-section">// Monitor</div>
+      <div class="nav-item active" onclick="showPage('overview')">
+        <span class="nav-icon">📊</span> Overview
+      </div>
+      <div class="nav-item" onclick="showPage('logs')">
+        <span class="nav-icon">📋</span> Live Logs
+      </div>
+      <div class="nav-item" onclick="showPage('processes')">
+        <span class="nav-icon">⚙️</span> Processes
+      </div>
+      <div class="nav-item" onclick="showPage('ports')">
+        <span class="nav-icon">🔌</span> Open Ports
+      </div>
+
+      <div class="nav-section">// Manage</div>
+      <div class="nav-item" onclick="showPage('services')">
+        <span class="nav-icon">⚡</span> Services
+      </div>
+      <div class="nav-item" onclick="showPage('ipchecker')">
+        <span class="nav-icon">🌐</span> IP Checker
+        <span class="new-badge">NEW</span>
+      </div>
+      <div class="nav-item" onclick="showPage('terminal')">
+        <span class="nav-icon">💻</span> Terminal
+      </div>
+    </nav>
+
+    <div class="sidebar-status">
+      <div><span class="status-dot"></span>ONLINE</div>
+      <div style="margin-top:5px;color:var(--text3)" id="sidebar-ip">—</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="page-title">Overview</div>
+        <div class="topbar-sub" id="page-time">Initializing...</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost" onclick="refreshAll()">⟳ Refresh</button>
+        <span id="live-indicator" style="font-size:11px;color:var(--green);font-family:JetBrains Mono,monospace;letter-spacing:1px">● LIVE</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── OVERVIEW ── -->
+      <div id="page-overview" class="page active">
+        <div class="stats-grid">
+          <div class="stat-card cyan">
+            <div class="stat-label">CPU Usage</div>
+            <div class="stat-value" id="stat-cpu">—</div>
+            <div class="stat-sub" id="stat-cpu-sub">—</div>
+            <div class="progress-bar"><div class="progress-fill" id="bar-cpu" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Memory</div>
+            <div class="stat-value" id="stat-mem">—</div>
+            <div class="stat-sub" id="stat-mem-sub">—</div>
+            <div class="progress-bar"><div class="progress-fill" id="bar-mem" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">Disk</div>
+            <div class="stat-value" id="stat-disk">—</div>
+            <div class="stat-sub" id="stat-disk-sub">—</div>
+            <div class="progress-bar"><div class="progress-fill" id="bar-disk" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-label">Network</div>
+            <div class="stat-value" id="stat-net">—</div>
+            <div class="stat-sub" id="stat-net-sub">—</div>
+            <div class="progress-bar"><div class="progress-fill" id="bar-net" style="width:50%"></div></div>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-icon" style="background:rgba(0,212,255,0.1)">🖥️</div>
+            <div><div class="info-label">Hostname</div><div class="info-value" id="info-hostname">—</div></div>
+          </div>
+          <div class="info-card">
+            <div class="info-icon" style="background:rgba(0,230,118,0.1)">🌐</div>
+            <div><div class="info-label">Local IP</div><div class="info-value" id="info-ip">—</div></div>
+          </div>
+          <div class="info-card">
+            <div class="info-icon" style="background:rgba(255,215,64,0.1)">⏱️</div>
+            <div><div class="info-label">Uptime</div><div class="info-value" id="info-uptime">—</div></div>
+          </div>
+          <div class="info-card">
+            <div class="info-icon" style="background:rgba(176,96,255,0.1)">💾</div>
+            <div><div class="info-label">Platform</div><div class="info-value" id="info-platform">—</div></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="section-header">
+              <div><div class="section-title">Recent Logs</div><div class="section-sub">Last 10 entries</div></div>
+              <button class="btn btn-ghost btn-sm" onclick="showPage('logs')">View All →</button>
+            </div>
+            <div class="log-terminal" style="height:270px">
+              <div class="terminal-header">
+                <div class="terminal-dots"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+                <div class="terminal-title">SYSWATCH // LIVE FEED</div>
+                <div></div>
+              </div>
+              <div class="terminal-body" id="overview-logs"></div>
+            </div>
+          </div>
+          <div>
+            <div class="section-header">
+              <div><div class="section-title">Top Processes</div><div class="section-sub">By CPU usage</div></div>
+              <button class="btn btn-ghost btn-sm" onclick="showPage('processes')">View All →</button>
+            </div>
+            <div class="panel">
+              <div class="panel-body" style="padding:0 16px">
+                <div class="table-scroll" style="padding:12px 0">
+                  <table class="data-table">
+                    <thead><tr><th>PID</th><th>Name</th><th>CPU%</th><th>MEM%</th></tr></thead>
+                    <tbody id="overview-procs-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LOGS ── -->
+      <div id="page-logs" class="page">
+        <div class="section-header">
+          <div><div class="section-title">Live Logs</div><div class="section-sub">Real-time SSE event stream</div></div>
+          <div style="display:flex;gap:8px">
+            <select class="form-input" style="width:auto;padding:6px 10px" id="log-filter" onchange="filterLogs()">
+              <option value="">All Levels</option>
+              <option value="INFO">INFO</option>
+              <option value="WARN">WARN</option>
+              <option value="ERROR">ERROR</option>
+            </select>
+            <button class="btn btn-ghost" onclick="clearLogs()">Clear</button>
+          </div>
+        </div>
+        <div class="log-terminal">
+          <div class="terminal-header">
+            <div class="terminal-dots"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-title">● SYSWATCH // LIVE LOG STREAM</div>
+            <div style="font-size:10px;color:var(--text3);font-family:JetBrains Mono" id="log-count">0 entries</div>
+          </div>
+          <div class="terminal-body" id="log-terminal"></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESSES ── -->
+      <div id="page-processes" class="page">
+        <div class="section-header">
+          <div><div class="section-title">Processes</div><div class="section-sub">Top 15 by CPU usage</div></div>
+          <button class="btn btn-ghost" onclick="loadProcesses()">⟳ Refresh</button>
+        </div>
+        <div class="panel">
+          <div class="panel-body" style="padding:0 18px">
+            <div class="table-scroll" style="max-height:500px;padding:12px 0">
+              <table class="data-table">
+                <thead><tr><th>PID</th><th>Process Name</th><th>CPU %</th><th>Memory %</th><th>Status</th></tr></thead>
+                <tbody id="proc-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PORTS ── -->
+      <div id="page-ports" class="page">
+        <div class="section-header">
+          <div><div class="section-title">Open Ports</div><div class="section-sub">Currently listening on this machine</div></div>
+          <button class="btn btn-ghost" onclick="loadPorts()">⟳ Refresh</button>
+        </div>
+        <div class="port-grid" id="port-grid"></div>
+      </div>
+
+      <!-- ── SERVICES ── -->
+      <div id="page-services" class="page">
+        <div class="section-header" style="margin-bottom:16px">
+          <div><div class="section-title">Services</div><div class="section-sub">Manage local & cloud services</div></div>
+        </div>
+        <div class="add-form">
+          <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text3);font-family:JetBrains Mono,monospace;letter-spacing:1px">// REGISTER SERVICE</div>
+          <div class="form-row">
+            <div class="form-group"><label>Service Name</label><input class="form-input" id="svc-name" placeholder="e.g. Flask API"></div>
+            <div class="form-group"><label>Port</label><input class="form-input" id="svc-port" placeholder="e.g. 5000" type="number"></div>
+            <div class="form-group"><label>Description</label><input class="form-input" id="svc-desc" placeholder="Optional"></div>
+          </div>
+          <button class="btn btn-primary" onclick="addService()">+ Register</button>
+        </div>
+        <div class="services-grid" id="services-grid">
+          <div style="color:var(--text3);font-size:13px;grid-column:1/-1;padding:20px 0;font-family:JetBrains Mono,monospace">No services registered. Add one above.</div>
+        </div>
+      </div>
+
+      <!-- ── IP CHECKER ── -->
+      <div id="page-ipchecker" class="page">
+        <div class="section-header" style="margin-bottom:16px">
+          <div>
+            <div class="section-title">🌐 IP Checker</div>
+            <div class="section-sub">Monitor multiple remote IPs — ping, port scan, geo, HTTP status</div>
+          </div>
+          <button class="btn btn-cyan" onclick="checkAllIPs()" id="check-all-btn">⚡ Check All</button>
+        </div>
+
+        <div class="add-form">
+          <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text3);font-family:JetBrains Mono,monospace;letter-spacing:1px">// ADD REMOTE HOST</div>
+          <div class="form-row-2">
+            <div class="form-group"><label>Host / IP Address</label><input class="form-input" id="ip-host" placeholder="e.g. 192.168.1.1 or google.com"></div>
+            <div class="form-group"><label>Label (optional)</label><input class="form-input" id="ip-label" placeholder="e.g. Production Server"></div>
+          </div>
+          <button class="btn btn-primary" onclick="addIP()">+ Add Host</button>
+        </div>
+
+        <div class="ip-grid" id="ip-grid">
+          <div style="color:var(--text3);font-size:13px;grid-column:1/-1;padding:20px 0;font-family:JetBrains Mono,monospace">
+            No remote hosts added. Add an IP or hostname above to start monitoring.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TERMINAL ── -->
+      <div id="page-terminal" class="page">
+        <div class="section-header">
+          <div><div class="section-title">Terminal</div><div class="section-sub">Run commands on this server</div></div>
+        </div>
+        <div class="cmd-area">
+          <div class="cmd-input-row">
+            <span class="cmd-prompt">root@syswatch:~$</span>
+            <input class="cmd-input" id="cmd-input" placeholder="Enter command..." onkeydown="cmdKey(event)">
+            <button class="btn btn-primary" onclick="runCommand()">Run</button>
+          </div>
+          <div class="cmd-output" id="cmd-output">
+# SysWatch Terminal — Type a command and press Enter
+# Quick examples: ls -la  |  ps aux  |  free -h  |  df -h  |  netstat -tlnp
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text3);font-family:JetBrains Mono,monospace;letter-spacing:1px">// QUICK COMMANDS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('ls -la')">ls -la</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('ps aux | head -20')">ps aux</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('df -h')">df -h</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('free -h')">free -h</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('python3 --version')">python3 --version</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('pip list')">pip list</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('netstat -tlnp 2>/dev/null || ss -tlnp')">netstat</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('uname -a')">uname -a</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('whoami && hostname')">whoami</button>
+            <button class="btn btn-ghost btn-sm" onclick="quickCmd('cat /etc/os-release')">os-release</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const PAGES = {
+    overview:'Overview', services:'Services', logs:'Live Logs',
+    processes:'Processes', ports:'Open Ports', terminal:'Terminal',
+    ipchecker:'IP Checker'
+  };
+
+  let allLogs = [], logFilter = '', sseSource = null;
+
+  // ── Navigation ──────────────────────────────────────
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    event && event.currentTarget && event.currentTarget.classList.add('active');
+    // find nav item
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.textContent.trim().toLowerCase().includes(PAGES[id].toLowerCase().split(' ')[0])) n.classList.add('active');
+    });
+    document.getElementById('page-title').textContent = PAGES[id];
+    if (id === 'processes') loadProcesses();
+    if (id === 'ports') loadPorts();
+    if (id === 'services') loadServices();
+    if (id === 'ipchecker') loadIPs();
+  }
+
+  function toast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast show ${type}`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Stats ────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const s = await (await fetch('/api/stats')).json();
+      document.getElementById('stat-cpu').textContent = s.cpu.toFixed(1) + '%';
+      document.getElementById('stat-cpu-sub').textContent = s.platform;
+      document.getElementById('bar-cpu').style.width = s.cpu + '%';
+      document.getElementById('stat-mem').textContent = s.memory.percent.toFixed(1) + '%';
+      document.getElementById('stat-mem-sub').textContent = `${s.memory.used}GB / ${s.memory.total}GB`;
+      document.getElementById('bar-mem').style.width = s.memory.percent + '%';
+      document.getElementById('stat-disk').textContent = s.disk.percent.toFixed(1) + '%';
+      document.getElementById('stat-disk-sub').textContent = `${s.disk.used}GB / ${s.disk.total}GB`;
+      document.getElementById('bar-disk').style.width = s.disk.percent + '%';
+      document.getElementById('stat-net').textContent = `↑${s.network.sent}MB`;
+      document.getElementById('stat-net-sub').textContent = `↓${s.network.recv}MB recv`;
+      document.getElementById('info-hostname').textContent = s.hostname;
+      document.getElementById('info-ip').textContent = s.ip;
+      document.getElementById('sidebar-ip').textContent = s.ip;
+      const h = Math.floor(s.uptime/3600), m = Math.floor((s.uptime%3600)/60);
+      document.getElementById('info-uptime').textContent = `${h}h ${m}m`;
+      document.getElementById('info-platform').textContent = s.platform;
+      document.getElementById('page-time').textContent = new Date().toLocaleTimeString();
+    } catch(e) {}
+  }
+
+  // ── Processes ────────────────────────────────────────
+  async function loadProcesses() {
+    try {
+      const procs = await (await fetch('/api/processes')).json();
+      const rows = procs.map(p => `
+        <tr>
+          <td><span class="pid-badge">${p.pid}</span></td>
+          <td style="color:var(--text)">${p.name}</td>
+          <td style="color:${p.cpu>10?'var(--yellow)':'var(--text2)'}">${p.cpu}%</td>
+          <td>${p.mem}%</td>
+          <td><span class="status-badge status-${p.status==='running'?'running':p.status==='sleeping'?'sleeping':'stopped'}">${p.status}</span></td>
+        </tr>`).join('');
+      const b = document.getElementById('proc-table-body');
+      if (b) b.innerHTML = rows;
+      const ob = document.getElementById('overview-procs-body');
+      if (ob) ob.innerHTML = procs.slice(0,8).map(p => `
+        <tr>
+          <td><span class="pid-badge">${p.pid}</span></td>
+          <td style="color:var(--text)">${p.name.substring(0,20)}</td>
+          <td style="color:${p.cpu>10?'var(--yellow)':'var(--text2)'}">${p.cpu}%</td>
+          <td>${p.mem}%</td>
+        </tr>`).join('');
+    } catch(e) {}
+  }
+
+  // ── Ports ────────────────────────────────────────────
+  async function loadPorts() {
+    try {
+      const ports = await (await fetch('/api/ports')).json();
+      const grid = document.getElementById('port-grid');
+      if (!ports.length) { grid.innerHTML = '<div style="color:var(--text3);font-size:13px;font-family:JetBrains Mono,monospace">No open ports found.</div>'; return; }
+      grid.innerHTML = ports.map(p => `
+        <div class="port-chip" onclick="copyPort(${p.port})" title="Click to copy">
+          <div class="port-num">:${p.port}</div>
+          <div class="port-name">${p.process} (PID ${p.pid||'?'})</div>
+        </div>`).join('');
+    } catch(e) {}
+  }
+
+  function copyPort(p) {
+    navigator.clipboard.writeText(`localhost:${p}`).then(() => toast(`Copied localhost:${p}`, 'info'));
+  }
+
+  // ── Logs ─────────────────────────────────────────────
+  function renderLogLine(e) {
+    if (logFilter && e.level !== logFilter) return '';
+    return `<div class="log-line ${e.level}">
+      <span class="log-time">${e.time}</span>
+      <span class="log-badge">${e.level}</span>
+      <span class="log-service">${(e.service||'syswatch').substring(0,10)}</span>
+      <span class="log-msg">${e.message}</span>
+    </div>`;
+  }
+
+  function renderAllLogs() {
+    const el = document.getElementById('log-terminal');
+    if (!el) return;
+    el.innerHTML = allLogs.map(renderLogLine).join('');
+    document.getElementById('log-count').textContent = allLogs.length + ' entries';
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function renderOverviewLogs(logs) {
+    const el = document.getElementById('overview-logs');
+    if (!el) return;
+    el.innerHTML = logs.slice(-10).map(renderLogLine).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function filterLogs() { logFilter = document.getElementById('log-filter').value; renderAllLogs(); }
+  function clearLogs() { allLogs = []; renderAllLogs(); }
+
+  async function loadInitialLogs() {
+    try {
+      allLogs = await (await fetch('/api/logs')).json();
+      renderAllLogs();
+      renderOverviewLogs(allLogs);
+    } catch(e) {}
+  }
+
+  function startSSE() {
+    if (sseSource) sseSource.close();
+    sseSource = new EventSource('/api/logs/stream');
+    sseSource.onmessage = e => {
+      const entry = JSON.parse(e.data);
+      allLogs.push(entry);
+      if (allLogs.length > 500) allLogs.shift();
+      renderAllLogs();
+      renderOverviewLogs(allLogs);
+    };
+    sseSource.onerror = () => {
+      document.getElementById('live-indicator').style.color = 'var(--red)';
+      document.getElementById('live-indicator').textContent = '● OFFLINE';
+    };
+  }
+
+  // ── Services ─────────────────────────────────────────
+  async function loadServices() {
+    try {
+      const svcs = await (await fetch('/api/services')).json();
+      const grid = document.getElementById('services-grid');
+      if (!svcs.length) {
+        grid.innerHTML = '<div style="color:var(--text3);font-size:13px;grid-column:1/-1;padding:20px 0;font-family:JetBrains Mono,monospace">No services registered.</div>';
+        return;
+      }
+      grid.innerHTML = svcs.map(s => `
+        <div class="service-card ${s.status}">
+          <div class="service-header">
+            <div class="service-name">${s.name}</div>
+            <span class="status-badge status-${s.status}">${s.status}</span>
+          </div>
+          <div class="service-desc">${s.description || '—'}</div>
+          <div class="service-meta">${s.port ? `Port: ${s.port}` : ''}<br>
+            <a href="${s.url}" target="_blank" style="color:var(--accent)">${s.url}</a>
+          </div>
+          <div class="service-actions">
+            <button class="btn btn-sm ${s.status==='running'?'btn-danger':'btn-success'}" onclick="toggleService('${s.id}')">
+              ${s.status==='running'?'Stop':'Start'}
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="removeService('${s.id}')">Remove</button>
+          </div>
+        </div>`).join('');
+    } catch(e) {}
+  }
+
+  async function addService() {
+    const name = document.getElementById('svc-name').value.trim();
+    const port = document.getElementById('svc-port').value.trim();
+    const desc = document.getElementById('svc-desc').value.trim();
+    if (!name) { toast('Service name required', 'error'); return; }
+    const data = await (await fetch('/api/services/add', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name,port,description:desc}) })).json();
+    if (data.ok) { toast(`Service "${name}" registered!`); document.getElementById('svc-name').value=''; document.getElementById('svc-port').value=''; document.getElementById('svc-desc').value=''; loadServices(); }
+    else toast(data.error||'Error', 'error');
+  }
+
+  async function toggleService(id) {
+    const data = await (await fetch(`/api/services/${id}/toggle`, {method:'POST'})).json();
+    if (data.ok) { toast(`Service ${data.status}`); loadServices(); }
+  }
+
+  async function removeService(id) {
+    if (!confirm('Remove this service?')) return;
+    const data = await (await fetch(`/api/services/${id}/remove`, {method:'DELETE'})).json();
+    if (data.ok) { toast('Service removed'); loadServices(); }
+  }
+
+  // ── IP Checker ───────────────────────────────────────
+  const ipResults = {};
+
+  async function addIP() {
+    const host = document.getElementById('ip-host').value.trim();
+    const label = document.getElementById('ip-label').value.trim();
+    if (!host) { toast('Host required', 'error'); return; }
+    toast('Resolving host...', 'info');
+    try {
+      const data = await (await fetch('/api/ip/add', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({host, label}) })).json();
+      if (data.ok) {
+        toast(`Added: ${data.entry.ip}`, 'success');
+        document.getElementById('ip-host').value = '';
+        document.getElementById('ip-label').value = '';
+        loadIPs();
+      } else {
+        toast(data.error || 'Failed', 'error');
+      }
+    } catch(e) { toast('Error adding host', 'error'); }
+  }
+
+  async function loadIPs() {
+    try {
+      const ips = await (await fetch('/api/ip/list')).json();
+      renderIPGrid(ips);
+    } catch(e) {}
+  }
+
+  function renderIPGrid(ips) {
+    const grid = document.getElementById('ip-grid');
+    if (!ips.length) {
+      grid.innerHTML = '<div style="color:var(--text3);font-size:13px;grid-column:1/-1;padding:20px 0;font-family:JetBrains Mono,monospace">No remote hosts added.</div>';
+      return;
+    }
+    grid.innerHTML = ips.map(ip => {
+      const r = ipResults[ip.id];
+      const aliveClass = ip.alive === null ? 'unknown' : ip.alive ? 'online' : 'offline';
+      const cardClass = ip.alive === null ? '' : ip.alive ? 'online' : 'offline';
+      return `
+        <div class="ip-card ${cardClass}" id="ip-card-${ip.id}">
+          <div class="ip-card-header">
+            <div>
+              <div class="ip-label">${ip.label}</div>
+              <div class="ip-addr">${ip.ip} ${ip.host !== ip.ip ? '// '+ip.host : ''}</div>
+            </div>
+            <div class="ip-alive ${aliveClass}"></div>
+          </div>
+          <div class="ip-card-body" id="ip-body-${ip.id}">
+            ${r ? renderIPDetail(r) : `
+              <div style="color:var(--text3);font-size:12px;font-family:JetBrains Mono,monospace">
+                ${ip.last_check ? `Last check: ${ip.last_check} — ${ip.alive?'ONLINE':'OFFLINE'}` : 'Not yet checked.'}
+              </div>`}
+            <div class="ip-actions">
+              <button class="btn btn-cyan btn-sm" onclick="checkIP('${ip.id}')">🔍 Scan</button>
+              <button class="btn btn-ghost btn-sm" onclick="removeIP('${ip.id}')">Remove</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderIPDetail(r) {
+    const openPorts = r.ports ? r.ports.filter(p => p.open) : [];
+    const closedPorts = r.ports ? r.ports.filter(p => !p.open) : [];
+    const geo = r.geo || {};
+    const location = geo.city ? `${geo.city}, ${geo.country}` : '—';
+    const isp = geo.isp || '—';
+
+    return `
+      <div class="ip-stat-row">
+        <span class="ip-stat-label">Status</span>
+        <span class="ip-stat-value" style="color:${r.alive?'var(--green)':'var(--red)'}">${r.alive?'● ONLINE':'● OFFLINE'}</span>
+      </div>
+      <div class="ip-stat-row">
+        <span class="ip-stat-label">Location</span>
+        <span class="ip-stat-value">${location}</span>
+      </div>
+      <div class="ip-stat-row">
+        <span class="ip-stat-label">ISP</span>
+        <span class="ip-stat-value">${isp.substring(0,22)}</span>
+      </div>
+      <div class="ip-stat-row">
+        <span class="ip-stat-label">HTTP :80</span>
+        <span class="http-badge ${r.http&&r.http.reachable?'http-ok':'http-fail'}">${r.http&&r.http.reachable?'✓ '+r.http.status:'✗ Closed'}</span>
+      </div>
+      <div class="ip-stat-row">
+        <span class="ip-stat-label">HTTPS :443</span>
+        <span class="http-badge ${r.https&&r.https.reachable?'http-ok':'http-fail'}">${r.https&&r.https.reachable?'✓ '+r.https.status:'✗ Closed'}</span>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:var(--text3);font-family:JetBrains Mono,monospace;margin-bottom:6px;">OPEN PORTS (${openPorts.length}/${r.ports?r.ports.length:0})</div>
+      <div class="port-tags">
+        ${openPorts.map(p => `<span class="port-tag open">:${p.port} ${p.service}</span>`).join('')}
+        ${openPorts.length===0?'<span style="color:var(--text3);font-size:11px;font-family:JetBrains Mono,monospace">none detected</span>':''}
+      </div>`;
+  }
+
+  async function checkIP(iid) {
+    const card = document.getElementById('ip-card-' + iid);
+    const body = document.getElementById('ip-body-' + iid);
+    if (body) {
+      body.innerHTML = `<div style="padding:16px 0;color:var(--text3);font-family:JetBrains Mono,monospace;font-size:12px">
+        <span class="loading-spinner"></span>Scanning... (ping + port scan + geo)
+      </div>`;
+    }
+    try {
+      const r = await (await fetch(`/api/ip/${iid}/check`)).json();
+      ipResults[iid] = r;
+      toast(`${r.label}: ${r.alive?'ONLINE':'OFFLINE'}`, r.alive?'success':'error');
+      loadIPs();
+    } catch(e) {
+      toast('Scan failed', 'error');
+      loadIPs();
+    }
+  }
+
+  async function checkAllIPs() {
+    const btn = document.getElementById('check-all-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span>Checking...';
+    toast('Checking all hosts...', 'info');
+    try {
+      const results = await (await fetch('/api/ip/check-all')).json();
+      toast(`Done — ${results.filter(r=>r.alive).length}/${results.length} online`, 'success');
+      loadIPs();
+    } catch(e) { toast('Error', 'error'); }
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Check All';
+  }
+
+  async function removeIP(iid) {
+    if (!confirm('Remove this host?')) return;
+    await fetch(`/api/ip/${iid}/remove`, {method:'DELETE'});
+    delete ipResults[iid];
+    toast('Host removed');
+    loadIPs();
+  }
+
+  // ── Terminal ─────────────────────────────────────────
+  async function runCommand() {
+    const input = document.getElementById('cmd-input');
+    const output = document.getElementById('cmd-output');
+    const cmd = input.value.trim();
+    if (!cmd) return;
+    output.className = 'cmd-output';
+    output.textContent = `root@syswatch:~$ ${cmd}\n\n`;
+    try {
+      const data = await (await fetch('/api/run', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({command:cmd}) })).json();
+      if (data.error) { output.className = 'cmd-output error'; output.textContent = '✗ ' + data.error; }
+      else { output.textContent = data.output; if (data.returncode !== 0) output.className = 'cmd-output error'; }
+    } catch(e) { output.className = 'cmd-output error'; output.textContent = 'Request failed: ' + e.message; }
+    input.value = '';
+    input.focus();
+  }
+
+  function cmdKey(e) { if (e.key === 'Enter') runCommand(); }
+  function quickCmd(cmd) { showPage('terminal'); document.getElementById('cmd-input').value = cmd; runCommand(); }
+  function refreshAll() { loadStats(); loadProcesses(); }
+
+  // ── Init ─────────────────────────────────────────────
+  loadStats();
+  loadInitialLogs();
+  loadProcesses();
+  startSSE();
+
+  setInterval(loadStats, 5000);
+  setInterval(loadProcesses, 10000);
+</script>
+</body>
+</html>
