@@ -106,15 +106,15 @@ threading.Thread(target=background_monitor, daemon=True).start()
 log("INFO", f"{APP_NAME} v{APP_VERSION} started")
 log("INFO", f"Platform: {platform.system()} {platform.release()}")
 
-@app.route("/"); 
+@app.route("/") 
 def index(): return render_template("index.html")
-@app.route("/api/stats"); 
+@app.route("/api/stats") 
 def api_stats(): return jsonify(get_system_stats())
-@app.route("/api/processes"); 
+@app.route("/api/processes") 
 def api_processes(): return jsonify(get_running_processes())
-@app.route("/api/ports"); 
+@app.route("/api/ports") 
 def api_ports(): return jsonify(get_open_ports())
-@app.route("/api/logs"); 
+@app.route("/api/logs") 
 def api_logs():
     with log_lock: return jsonify(list(log_buffer))
 
@@ -130,7 +130,7 @@ def api_logs_stream():
             time.sleep(0.5)
     return Response(stream(), mimetype="text/event-stream")
 
-@app.route("/api/services"); 
+@app.route("/api/services") 
 def api_services(): return jsonify(list(services.values()))
 
 @app.route("/api/services/add", methods=["POST"])
@@ -154,7 +154,7 @@ def api_toggle_service(sid):
         return jsonify({"ok":True,"status":services[sid]["status"]})
     return jsonify({"error":"Not found"}), 404
 
-@app.route("/api/ipwatch"); 
+@app.route("/api/ipwatch") 
 def api_ipwatch_list(): return jsonify(list(ip_targets.values()))
 
 @app.route("/api/ipwatch/add", methods=["POST"])
