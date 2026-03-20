@@ -1,6 +1,7 @@
 # 🛡️ SysWatch — Cybersecurity Dashboard
 
 A self-hosted local deploy & hosting dashboard with real-time monitoring, multi-IP checker, port scanner, and terminal. Built with Python Flask + HTML/CSS/JS.
+<img width="1167" height="811" alt="image" src="https://github.com/user-attachments/assets/354acd0c-ea5b-4280-a620-00e5af76c442" />
 
 ---
 
