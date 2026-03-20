@@ -50,6 +50,8 @@ chmod +x start.sh && ./start.sh
 ```
 
 ---
+<img width="1919" height="877" alt="image" src="https://github.com/user-attachments/assets/5eaa9087-c506-41c3-9bc1-a3874f02a487" />
+
 
 ## Project Structure
 
